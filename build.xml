@@ -1,0 +1,64 @@
+<project default="runJWS">
+	<!-- 
+	[設定] 
+	src         : ソースファイルの場所。多分変えなくてOK。
+	classes     : コンパイル結果の class ファイルの出力先。
+	dest        : jar ファイルと jnlp ファイルの出力先。
+	jnlp.jar    : jnlp.jarファイルの場所。コンパイルに必要。環境により適宜変える。
+	jar-file    : 出力する jar ファイルの名前。
+	jnlp-file   : 出力する jnlp ファイルの名前。
+	jnlp-main-class : 実行する class 名(main 関数があるクラス)。
+	-->
+	<property name="src" value="./src" />
+	<property name="classes" value="./classes" />
+	<property name="dest" value="./dest" />
+	<property name="jnlp.jar" value="C:\Program Files\Java\jdk1.6.0_06\sample\jnlp\servlet\jnlp.jar" />
+	<property name="jar-file" value="application.jar" />
+	<property name="jnlp-file" value="application.jnlp" />
+	<property name="jnlp-main-class" value="test.OpenDocumentTest" />
+
+	<!-- Java Web Start アプリケーションの実行。 -->
+	<target name="runJWS" depends="mkjnlp">
+		<echo message="Run: ${dest}/${jnlp-file}" level="info" />
+		<exec executable="javaws">
+			<arg value="-Xnosplash" />
+			<arg value="${dest}/${jnlp-file}" />
+		</exec>
+	</target>
+	<!-- コンパイル -->
+	<target name="compile">
+		<mkdir dir="${classes}" />
+	    <javac srcdir="${src}" destdir="${classes}">
+	        <classpath path="${jnlp.jar}" />
+	   	</javac>
+	</target>
+	<!-- jar ファイルの作成 -->
+	<target name="jar" depends="compile">
+		<mkdir dir="${dest}" />
+		<jar basedir="${classes}" destfile="${dest}/${jar-file}" />
+	</target>
+	<!-- jnlp ファイルの作成 -->
+	<target name="mkjnlp" depends="jar">
+		<dirname file="${dest}" property="dest.dir" />
+		<makeurl file="${dest}" property="dest.url"/>
+		<echo message="Creating jnlp to: ${dest.dir}/" level="info" />
+		<echo file="${dest}/${jnlp-file}"><![CDATA[
+<jnlp spec="1.0+" codebase="${dest.url}" href="${jnlp-file}">
+    <information>
+        <title>Java Web Start Application</title>
+        <vendor>Test</vendor>
+    </information>
+    <resources>
+        <j2se version="1.4+" />
+        <jar href="${jar-file}" />
+    </resources>
+    <application-desc main-class="${jnlp-main-class}" />
+</jnlp>
+]]></echo>
+	</target>
+	<!-- クリーン。ファイルやディレクトリの削除。 -->
+	<target name="clean">
+		<delete dir="${classes}" />
+		<delete dir="${dest}" />
+	</target>
+</project>
