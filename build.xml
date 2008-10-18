@@ -16,6 +16,8 @@
 	<property name="jar-file" value="application.jar" />
 	<property name="jnlp-file" value="application.jnlp" />
 	<property name="jnlp-main-class" value="test.OpenDocumentTest" />
+	<!-- デバッグに必要 -->
+	<property name="JDK_HOME" value="C:\Program Files\Java\jdk1.6.0_06" />
 
 	<!-- Java Web Start アプリケーションの実行。 -->
 	<target name="runJWS" depends="mkjnlp">
@@ -25,10 +27,44 @@
 			<arg value="${dest}/${jnlp-file}" />
 		</exec>
 	</target>
+	<!-- 
+	デバッグの実行。 
+	別途、Eclipse にてリモートデバッグの設定をします。
+	メニューの「実行」→「デバッグの構成」から「リモート Java アプリケーション」→「新規」。
+		プロジェクト : デバッグする対象のプロジェクト
+		ホスト       : localhost
+		ポート       : 8118
+	に設定。
+	このタスクを実行すると「Run Debug: ./dest/application.jnlp」で止まったように見えますが、
+	リモートデバッグを開始すると動き出します。
+	@see http://www.smg.co.jp/JavaTroubleshooting/column_003Main.html
+	@see http://d.hatena.ne.jp/Kazzz/20080408/p2
+	-->
+	<target name="runDebug" depends="mkjnlp">
+		<echo message="Run Debug: ${dest}/${jnlp-file}" level="info" />
+		<java fork="true" classname="com.sun.javaws.Main">
+			<bootclasspath>
+				<filelist dir="${JDK_HOME}\jre\lib">
+					<file name="rt.jar" />
+					<file name="javaws.jar" />
+					<file name="deploy.jar" />
+				</filelist>
+			</bootclasspath>
+			<jvmarg value="-Djnlpx.home=${JDK_HOME}\jre\bin" />
+			<jvmarg value="-Djnlp.jvm=${JDK_HOME}\jre\bin\javaw.exe" />
+			<jvmarg value="-Djava.security.policy=file:${JDK_HOME}\lib\security\javaws.policy" />
+			<jvmarg value="-DtrustProxy=true" />
+			<jvmarg value="-Xverify:remote" />
+			<jvmarg value="-Djnlpx.heapsize=NULL,NULL" />
+			<jvmarg line='-Djnlpx.vmargs="-classic -Xdebug -Dnoagent -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8118"' />
+			<arg value="${dest}/${jnlp-file}" />
+		</java>
+		<echo message="Run Debug End." level="info" />
+	</target>	
 	<!-- コンパイル -->
 	<target name="compile">
 		<mkdir dir="${classes}" />
-	    <javac srcdir="${src}" destdir="${classes}">
+	    <javac srcdir="${src}" destdir="${classes}" debug="on">
 	        <classpath path="${jnlp.jar}" />
 	   	</javac>
 	</target>
